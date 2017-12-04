@@ -293,12 +293,14 @@ import javax.xml.xpath.XPathFactory;
 public class downloadReport {
 
 	static String gserverUrl;
+	static String gapiversion;
 	static String gaccessToken;
 
 	public static void main(String[] args) throws UnsupportedEncodingException {		
 		String hostName;
 		String username;
 		String password;
+		String apiversion;
 		String reportId;
 		String csvFile;
 		String SOQL;
@@ -306,13 +308,16 @@ public class downloadReport {
 
 		if (args.length>0) {
 			hostName      = args[0];
-			username      = args[1];
-			password      = args[2];
-			reportId      = args[3];
-			csvFile       = args[4];
-			SOQL          = args[5];
-			anonymousBody = args[6];
+			apiversion    = args[1];
+			username      = args[2];
+			password      = args[3];
+			reportId      = args[4];
+			csvFile       = args[5];
+			SOQL          = args[6];
+			anonymousBody = args[7];
 		} else {
+			apiversion = "41.0"; 
+			
 			System.out.print("Enter hostname (or accept https://login.salesforce.com): ");
 			Scanner terminalInput = new Scanner(System.in);
 			hostName = terminalInput.nextLine();
@@ -326,17 +331,21 @@ public class downloadReport {
 			terminalInput = new Scanner(System.in);
 			password = terminalInput.nextLine();				
 
-			System.out.print("Enter anonymousBody (or accept Example");
+			System.out.print("Enter anonymousBody (or enter)");
 			terminalInput = new Scanner(System.in);
 			anonymousBody = terminalInput.nextLine();				
 			//System.debug(1/0)
-			if ((anonymousBody+"").length() == 0)  anonymousBody = URLEncoder.encode("Contact contact = [select id, Brand__c from contact where id = '003w0000018P6Ez']; contact.Brand__c = 'ABCD'; update contact;", "UTF-8");
-			System.out.print("anonymousBody="+anonymousBody);
+			if ((anonymousBody+"").length() == 0)  anonymousBody = "Contact contact = [select id, Brand__c from contact where id = '003w0000018P6Ez']; contact.Brand__c = 'ABCD'; update contact;";
+			System.out.println("anonymousBody:"+anonymousBody);
+			System.out.println();
+			System.out.println();
+			anonymousBody = URLEncoder.encode(anonymousBody, "UTF-8");
 			
 			System.out.print("Enter SOQL (or accept select+Id,Name+From+Account+Limit+10):");
 			terminalInput = new Scanner(System.in);
 			SOQL = terminalInput.nextLine();				
-			if ((SOQL+"").length() == 0)  SOQL = "select+Id,Name+From+Account+Limit+10";
+			if ((SOQL+"").length() == 0)  SOQL = "select Id,Name From Account Limit 10";
+			SOQL = URLEncoder.encode(SOQL, "UTF-8");
 
 			System.out.print("Enter reportId (or accept 00Ob0000003uviH):");
 			terminalInput = new Scanner(System.in);
@@ -349,7 +358,8 @@ public class downloadReport {
 			if ((csvFile+"").length() == 0)  csvFile = "C:/Temp/x.csv";
 
 			
-		};		
+		};	
+		gapiversion = apiversion;
 		
 		downloadReport http = new downloadReport();
 		try {
@@ -379,7 +389,7 @@ public class downloadReport {
 	private void getSecurityTokenMethod1(String hostName, String username, String password) throws Exception {
 		
 		System.out.println("================= getSecurityToken ======================= ");
-		String url = hostName + "/services/Soap/u/36.0";
+		String url = hostName + "/services/Soap/u/{VERSION}".replace("{VERSION}", gapiversion);
 		URL obj = new URL(url);
 		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
  
@@ -530,7 +540,7 @@ public class downloadReport {
 	//======================================================================================
 	private String getSOQLData(String hostName, String accessToken, String soql) throws Exception {
 		System.out.println("================= getSOQLData ======================= ");
-		String url = hostName + "/services/data/v37.0/query/?q="+soql;
+		String url = hostName + "/services/data/v{VERSION}/query/?q=".replace("{VERSION}", gapiversion)+soql;
 		URL obj = new URL(url);
 		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
  
@@ -577,7 +587,7 @@ public class downloadReport {
 	//======================================================================================
 	private String executeAnonymous(String hostName, String accessToken, String anonymousBody) throws Exception {
 		System.out.println("================= executeAnonymous ======================= ");
-		String url = hostName + "/services/data/v37.0/tooling/executeAnonymous/?anonymousBody="+anonymousBody;
+		String url = hostName + "/services/data/v{VERSION}/tooling/executeAnonymous/?anonymousBody=".replace("{VERSION}", gapiversion)+anonymousBody;
 		URL obj = new URL(url);
 		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
  
@@ -624,7 +634,7 @@ public class downloadReport {
 	//======================================================================================
 	private String getReportData(String hostName, String accessToken, String reportId, String csvFile) throws Exception {
 		System.out.println("================= getReportData ======================= ");
-		String url = hostName+"/services/data/v30.0/analytics/reports/"+reportId+"?includeDetails=true";
+		String url = hostName+"/services/data/v{VERSION}/analytics/reports/".replace("{VERSION}", gapiversion)+reportId+"?includeDetails=true";
 
 		URL obj = new URL(url);
 		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
