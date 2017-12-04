@@ -299,6 +299,7 @@ public class downloadReport {
 		String reportId;
 		String csvFile;
 		String SOQL;
+		String anonymousBody;
 
 		if (args.length>0) {
 			hostName      = args[0];
@@ -307,6 +308,7 @@ public class downloadReport {
 			reportId      = args[3];
 			csvFile       = args[4];
 			SOQL          = args[5];
+			anonymousBody = args[6];
 		} else {
 			System.out.print("Enter hostname (or accept https://login.salesforce.com): ");
 			Scanner terminalInput = new Scanner(System.in);
@@ -321,6 +323,18 @@ public class downloadReport {
 			terminalInput = new Scanner(System.in);
 			password = terminalInput.nextLine();				
 
+			System.out.print("Enter anonymousBody (or accept System.debug(1/0);");
+			terminalInput = new Scanner(System.in);
+			anonymousBody = terminalInput.nextLine();				
+			//System.debug(1/0)
+			//Contact+contact+%3D+%5Bselect+id%2C+Brand__c+from+contact+where+id+%3D+%27003w0000018P6Ez%27%5D%3B+contact.Brand__c+%3D+%27AAA%27%3B+update+contact%3B
+			if ((anonymousBody+"").length() == 0)  anonymousBody = "Contact contact = [select id, Brand__c from contact where id = '003w0000018P6Ez']; contact.Brand__c = 'AAA'; update contact;";
+
+			System.out.print("Enter SOQL (or accept select+Id,Name+From+Account+Limit+10):");
+			terminalInput = new Scanner(System.in);
+			SOQL = terminalInput.nextLine();				
+			if ((SOQL+"").length() == 0)  SOQL = "select+Id,Name+From+Account+Limit+10";
+
 			System.out.print("Enter reportId (or accept 00Ob0000003uviH):");
 			terminalInput = new Scanner(System.in);
 			reportId = terminalInput.nextLine();				
@@ -331,10 +345,7 @@ public class downloadReport {
 			csvFile = terminalInput.nextLine();				
 			if ((csvFile+"").length() == 0)  csvFile = "C:/Temp/x.csv";
 
-			System.out.print("Enter SOQL (or accept select+Id,Name+From+Account+Limit+10):");
-			terminalInput = new Scanner(System.in);
-			SOQL = terminalInput.nextLine();				
-			if ((SOQL+"").length() == 0)  SOQL = "select+Id,Name+From+Account+Limit+10";
+			
 		};		
 		
 		downloadReport http = new downloadReport();
@@ -343,8 +354,9 @@ public class downloadReport {
 			http.getSecurityTokenMethod1(hostName,  username, password);
 			//Method2 works too, it is additionally required to delived client_id and client_secret
 			//String accessToken = http.getSecurityTokenMethod2(hostName, client_id, client_secret, username, password);
-		    String data = http.getSOQLData(gserverUrl, gaccessToken, SOQL);
-			 data = http.getReportData(gserverUrl, gaccessToken, reportId, csvFile);	
+		     String data1 = http.executeAnonymous(gserverUrl, gaccessToken, anonymousBody);
+		     String data2 = http.getSOQLData(gserverUrl, gaccessToken, SOQL);
+			 String Data3=  http.getReportData(gserverUrl, gaccessToken, reportId, csvFile);	
 				
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -556,6 +568,53 @@ public class downloadReport {
 		for (int i=0;i<a.size();i++) {
 			System.out.println( ((JSONObject)a.get(i)).get("Name").toString() );			
 		}
+		return response.toString(); 
+	} 	
+
+	//======================================================================================
+	private String executeAnonymous(String hostName, String accessToken, String anonymousBody) throws Exception {
+		System.out.println("================= executeAnonymous ======================= ");
+		String url = hostName + "/services/data/v37.0/tooling/executeAnonymous/?anonymousBody="+anonymousBody;
+		URL obj = new URL(url);
+		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+ 
+		//add reuqest header
+		con.setRequestMethod("GET");
+		//equivalent curl -H
+		con.setRequestProperty("Authorization", "Bearer "+accessToken);
+ 
+		// Send post request
+		con.setDoOutput(true);
+ 
+		int responseCode = con.getResponseCode();
+		System.out.println("\nSending 'GET' request to URL : " + url);
+		//System.out.println("Post parameters : " + urlParameters);
+		System.out.println("Response Code : " + responseCode);
+ 
+		BufferedReader in = new BufferedReader(
+		        new InputStreamReader(con.getInputStream()));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+ 
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+		
+		//print result
+		System.out.println(response.toString());
+		//sample response
+		//{"id":"https://login.salesforce.com/id/00D200000005AU3EAM/00520000002nmehAAA","issued_at":"1385833580880","instance_url":"https://eu3.salesforce.com","signature":"H+1vAiLoDhXe4IdVI6VdsPNq9Q7oOXKjYEen8rCAc+M=","access_token":"00D200000005AU3!AQYAQIY7RhkjVRbpHB37ynAA.fnO1Sv1pdooAEJMZKfHOfmeGaCaNYNW.EwAGKlR.1I.OGwrZnRE8ocy1vWeAbALBPC5psz3"}
+		
+		// source: http://www.mkyong.com/java/json-simple-example-read-and-write-json/
+		//JSONParser parser = new JSONParser();
+		//Object obj2 = parser.parse(response.toString());
+		//JSONObject jsonObject = (JSONObject) obj2;
+		//JSONArray a = (JSONArray)jsonObject.get("records");
+		//System.out.println("Accounts");
+		//for (int i=0;i<a.size();i++) {
+		//	System.out.println( ((JSONObject)a.get(i)).get("Name").toString() );			
+		//}
 		return response.toString(); 
 	} 	
 
