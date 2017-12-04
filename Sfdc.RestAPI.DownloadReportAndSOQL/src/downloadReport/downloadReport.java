@@ -6,8 +6,10 @@ import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Scanner;
 
@@ -293,7 +295,7 @@ public class downloadReport {
 	static String gserverUrl;
 	static String gaccessToken;
 
-	public static void main(String[] args) {		
+	public static void main(String[] args) throws UnsupportedEncodingException {		
 		String hostName;
 		String username;
 		String password;
@@ -324,13 +326,13 @@ public class downloadReport {
 			terminalInput = new Scanner(System.in);
 			password = terminalInput.nextLine();				
 
-			System.out.print("Enter anonymousBody (or accept System.debug(1/0);");
+			System.out.print("Enter anonymousBody (or accept Example");
 			terminalInput = new Scanner(System.in);
 			anonymousBody = terminalInput.nextLine();				
 			//System.debug(1/0)
-			//Contact+contact+%3D+%5Bselect+id%2C+Brand__c+from+contact+where+id+%3D+%27003w0000018P6Ez%27%5D%3B+contact.Brand__c+%3D+%27AAA%27%3B+update+contact%3B
-			if ((anonymousBody+"").length() == 0)  anonymousBody = "Contact contact = [select id, Brand__c from contact where id = '003w0000018P6Ez']; contact.Brand__c = 'AAA'; update contact;";
-
+			if ((anonymousBody+"").length() == 0)  anonymousBody = URLEncoder.encode("Contact contact = [select id, Brand__c from contact where id = '003w0000018P6Ez']; contact.Brand__c = 'ABCD'; update contact;", "UTF-8");
+			System.out.print("anonymousBody="+anonymousBody);
+			
 			System.out.print("Enter SOQL (or accept select+Id,Name+From+Account+Limit+10):");
 			terminalInput = new Scanner(System.in);
 			SOQL = terminalInput.nextLine();				
